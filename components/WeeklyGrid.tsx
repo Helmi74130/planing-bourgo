@@ -47,7 +47,7 @@ function TimeSlot({
   return (
     <div
       ref={setNodeRef}
-      className={`bg-secondary min-h-[60px] p-2 relative transition-colors ${
+      className={`bg-secondary min-h-[40px] p-1 relative transition-colors ${
         isOver ? 'bg-primary/20 ring-2 ring-primary' : 'hover:bg-muted/50'
       }`}
     >
@@ -57,7 +57,7 @@ function TimeSlot({
         const coach = coaches.find((c) => c.id === course.coach_id);
 
         return (
-          <div key={course.id} className="mb-2 last:mb-0">
+          <div key={course.id} className="mb-1 last:mb-0">
             <CourseCard
               course={course}
               typeCours={typeCours}
@@ -195,13 +195,13 @@ export function WeeklyGrid({ isAdmin = false, onAddCourse, onEditCourse }: Weekl
         <div className="min-w-max">
           <div className="grid grid-cols-[100px_repeat(7,minmax(180px,1fr))] gap-px bg-border">
             {/* Header with days */}
-            <div className="bg-card p-3 font-semibold text-center border-b-2 border-primary">
+            <div className="bg-card p-2 font-semibold text-center border-b-2 border-primary text-sm">
               Horaire
             </div>
             {DAYS.map((day, index) => (
               <div
                 key={day}
-                className="bg-card p-3 font-semibold text-center border-b-2 border-primary"
+                className="bg-card p-2 font-semibold text-center border-b-2 border-primary text-sm"
               >
                 {day}
               </div>
@@ -210,7 +210,7 @@ export function WeeklyGrid({ isAdmin = false, onAddCourse, onEditCourse }: Weekl
             {/* Time slots */}
             {timeSlots.map((time) => (
               <div key={time} className="contents">
-                <div className="bg-card p-3 text-sm font-medium text-center border-r border-border">
+                <div className="bg-card p-2 text-xs font-medium text-center border-r border-border">
                   {time}
                 </div>
 

@@ -19,11 +19,11 @@ export default function DisplayPage() {
     <div className="h-screen flex flex-col bg-black">
       <Header isAdmin={false} />
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="flex-1 overflow-auto p-3">
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Planning de la Semaine</h2>
-            <p className="text-lg text-primary font-semibold">
+            <h2 className="text-xl font-bold text-white mb-1">Planning de la Semaine</h2>
+            <p className="text-sm text-primary font-semibold">
               {currentTime.toLocaleDateString('fr-FR', {
                 weekday: 'long',
                 year: 'numeric',
@@ -33,7 +33,7 @@ export default function DisplayPage() {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-5xl font-bold text-primary">
+            <div className="text-3xl font-bold text-primary">
               {currentTime.toLocaleTimeString('fr-FR', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -42,7 +42,7 @@ export default function DisplayPage() {
           </div>
         </div>
 
-        <div className="bg-card/50 rounded-lg p-4 border-2 border-primary/30">
+        <div className="bg-card/50 rounded-lg p-2 border-2 border-primary/30">
           <WeeklyGrid isAdmin={false} />
         </div>
       </div>
