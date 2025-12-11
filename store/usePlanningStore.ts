@@ -12,22 +12,23 @@ const defaultData: PlanningData = {
   horaires: {
     ouverture: '08:00',
     fermeture: '22:00',
+    intervalle: 30,
   },
   terrains: [
-    { id: uuidv4(), nom: 'Court 1' },
-    { id: uuidv4(), nom: 'Court 2' },
-    { id: uuidv4(), nom: 'Terrain 1' },
+    { id: 'terrain-default-1', nom: 'Court 1' },
+    { id: 'terrain-default-2', nom: 'Court 2' },
+    { id: 'terrain-default-3', nom: 'Terrain 1' },
   ],
   coaches: [
-    { id: uuidv4(), nom: 'Jean Dupont' },
-    { id: uuidv4(), nom: 'Marie Martin' },
-    { id: uuidv4(), nom: 'Pierre Durand' },
+    { id: 'coach-default-1', nom: 'Jean Dupont' },
+    { id: 'coach-default-2', nom: 'Marie Martin' },
+    { id: 'coach-default-3', nom: 'Pierre Durand' },
   ],
   types_cours: [
-    { id: uuidv4(), nom: 'Padel', couleur: '#3b82f6', description: 'Cours de padel' },
-    { id: uuidv4(), nom: 'Boxe', couleur: '#ef4444', description: 'Cours de boxe' },
-    { id: uuidv4(), nom: 'Basketball', couleur: '#f59e0b', description: 'Cours de basketball' },
-    { id: uuidv4(), nom: 'Fitness', couleur: '#10b981', description: 'Cours de fitness' },
+    { id: 'type-default-1', nom: 'Padel', couleur: '#3b82f6', description: 'Cours de padel' },
+    { id: 'type-default-2', nom: 'Boxe', couleur: '#ef4444', description: 'Cours de boxe' },
+    { id: 'type-default-3', nom: 'Basketball', couleur: '#f59e0b', description: 'Cours de basketball' },
+    { id: 'type-default-4', nom: 'Fitness', couleur: '#10b981', description: 'Cours de fitness' },
   ],
   planning: [],
 };
@@ -280,6 +281,15 @@ export const usePlanningStore = create<PlanningStore>((set, get) => {
         types_cours: state.types_cours.filter((t) => t.id !== id),
         planning: state.planning.filter((c) => c.type_cours_id !== id),
       });
+      saveToStorage(createSnapshot(get()));
+    },
+
+    // Horaires
+    updateHoraires: (horaires) => {
+      const state = get();
+      (state as any)._addToHistory();
+
+      set({ horaires });
       saveToStorage(createSnapshot(get()));
     },
 

@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { usePlanningStore } from '@/store/usePlanningStore';
 
-type PanelSection = 'terrains' | 'coaches' | 'types';
+type PanelSection = 'terrains' | 'coaches' | 'types' | 'horaires';
 
 export function AdminPanel() {
   const {
     terrains,
     coaches,
     types_cours,
+    horaires,
     addTerrain,
     updateTerrain,
     deleteTerrain,
@@ -20,14 +21,17 @@ export function AdminPanel() {
     addCourseType,
     updateCourseType,
     deleteCourseType,
+    updateHoraires,
   } = usePlanningStore();
 
   const [expandedSection, setExpandedSection] = useState<PanelSection | null>('types');
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ type: PanelSection; id: string | null }>({
     type: 'terrains',
     id: null,
   });
   const [formData, setFormData] = useState({ nom: '', couleur: '#82FF13', description: '' });
+  const [tempHoraires, setTempHoraires] = useState(horaires);
 
   const toggleSection = (section: PanelSection) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -36,6 +40,7 @@ export function AdminPanel() {
   const startAdd = (type: PanelSection) => {
     setEditingItem({ type, id: null });
     setFormData({ nom: '', couleur: '#82FF13', description: '' });
+    setIsFormOpen(true);
   };
 
   const startEdit = (type: PanelSection, id: string) => {
@@ -56,11 +61,13 @@ export function AdminPanel() {
           description: item.description || '',
         });
     }
+    setIsFormOpen(true);
   };
 
   const cancelEdit = () => {
     setEditingItem({ type: 'terrains', id: null });
     setFormData({ nom: '', couleur: '#82FF13', description: '' });
+    setIsFormOpen(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -116,6 +123,19 @@ export function AdminPanel() {
     }
   };
 
+  const handleSaveHoraires = () => {
+    if (tempHoraires.ouverture >= tempHoraires.fermeture) {
+      alert("L'heure de fermeture doit être après l'heure d'ouverture");
+      return;
+    }
+    updateHoraires(tempHoraires);
+    alert('Horaires mis à jour avec succès!');
+  };
+
+  const handleResetHoraires = () => {
+    setTempHoraires(horaires);
+  };
+
   return (
     <div className="w-80 bg-card border-r-2 border-primary overflow-y-auto">
       <div className="p-4 border-b-2 border-primary">
@@ -123,6 +143,96 @@ export function AdminPanel() {
       </div>
 
       <div className="divide-y divide-border">
+        {/* Horaires */}
+        <div>
+          <button
+            onClick={() => toggleSection('horaires')}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary transition-colors"
+          >
+            <span className="font-semibold text-white">Horaires</span>
+            {expandedSection === 'horaires' ? (
+              <ChevronDown className="w-5 h-5 text-primary" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+
+          {expandedSection === 'horaires' && (
+            <div className="p-4 space-y-4 bg-secondary/30">
+              <div>
+                <label className="block text-sm font-semibold text-white mb-2">
+                  Heure d&apos;ouverture
+                </label>
+                <input
+                  type="time"
+                  value={tempHoraires.ouverture}
+                  onChange={(e) =>
+                    setTempHoraires({ ...tempHoraires, ouverture: e.target.value })
+                  }
+                  className="w-full px-4 py-2 rounded bg-secondary text-white border-2 border-border focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white mb-2">
+                  Heure de fermeture
+                </label>
+                <input
+                  type="time"
+                  value={tempHoraires.fermeture}
+                  onChange={(e) =>
+                    setTempHoraires({ ...tempHoraires, fermeture: e.target.value })
+                  }
+                  className="w-full px-4 py-2 rounded bg-secondary text-white border-2 border-border focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white mb-2">
+                  Intervalle entre créneaux
+                </label>
+                <select
+                  value={tempHoraires.intervalle}
+                  onChange={(e) =>
+                    setTempHoraires({
+                      ...tempHoraires,
+                      intervalle: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full px-4 py-2 rounded bg-secondary text-white border-2 border-border focus:border-primary focus:outline-none"
+                >
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>60 minutes</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  onClick={handleResetHoraires}
+                  className="flex-1 py-2 px-3 rounded bg-secondary text-white font-semibold hover:bg-muted transition-colors"
+                >
+                  Réinitialiser
+                </button>
+                <button
+                  onClick={handleSaveHoraires}
+                  className="flex-1 py-2 px-3 rounded bg-primary text-black font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  Appliquer
+                </button>
+              </div>
+
+              <div className="text-xs text-muted-foreground pt-2 border-t border-border">
+                <p>
+                  Horaires actuels: {horaires.ouverture} - {horaires.fermeture} (
+                  {horaires.intervalle} min)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Types de cours */}
         <div>
           <button
@@ -281,7 +391,7 @@ export function AdminPanel() {
       </div>
 
       {/* Edit/Add Form Modal */}
-      {editingItem.id !== null || (editingItem.id === null && formData.nom !== '' && editingItem.type) ? (
+      {isFormOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-lg shadow-xl max-w-md w-full border-2 border-primary">
             <div className="p-4 border-b-2 border-primary">
@@ -362,7 +472,7 @@ export function AdminPanel() {
             </form>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

@@ -34,6 +34,7 @@ export interface PlanningData {
   horaires: {
     ouverture: string;
     fermeture: string;
+    intervalle: number; // en minutes: 15, 30, 45, 60
   };
   terrains: Terrain[];
   coaches: Coach[];
@@ -48,6 +49,7 @@ export interface PlanningState {
   horaires: {
     ouverture: string;
     fermeture: string;
+    intervalle: number;
   };
   terrains: Terrain[];
   coaches: Coach[];
@@ -78,6 +80,9 @@ export interface PlanningActions {
   addCourseType: (type: Omit<TypeCours, 'id'>) => void;
   updateCourseType: (id: string, type: Partial<TypeCours>) => void;
   deleteCourseType: (id: string) => void;
+
+  // Horaires
+  updateHoraires: (horaires: { ouverture: string; fermeture: string; intervalle: number }) => void;
 
   // Import/Export
   loadPlanningFromJSON: (data: PlanningData) => void;

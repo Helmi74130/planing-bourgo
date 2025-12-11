@@ -1,6 +1,7 @@
 'use client';
 
-import { Download, Upload, RotateCcw, Undo2, Redo2 } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Upload, RotateCcw, Undo2, Redo2, Save, Loader2, CheckCircle2 } from 'lucide-react';
 import { usePlanningStore } from '@/store/usePlanningStore';
 
 interface HeaderProps {
@@ -9,6 +10,8 @@ interface HeaderProps {
 
 export function Header({ isAdmin = false }: HeaderProps) {
   const { exportPlanningJSON, loadPlanningFromJSON, reset, undo, redo, canUndo, canRedo } = usePlanningStore();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleExport = () => {
     const data = exportPlanningJSON();
@@ -53,6 +56,23 @@ export function Header({ isAdmin = false }: HeaderProps) {
     }
   };
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    // Simulate save delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setSaveSuccess(true);
+    setIsSaving(false);
+
+    // Wait a bit to show success message
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Reload the page
+    window.location.reload();
+  };
+
   return (
     <header className="bg-black border-b-2 border-primary py-4 px-6">
       <div className="max-w-full mx-auto flex items-center justify-between">
@@ -70,6 +90,29 @@ export function Header({ isAdmin = false }: HeaderProps) {
 
         {isAdmin && (
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2 bg-primary text-black rounded-lg font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Sauvegarde en cours...
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Sauvegarde réussie!
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Sauvegarder
+                </>
+              )}
+            </button>
+            <div className="w-px h-8 bg-border mx-2" />
             <button
               onClick={undo}
               disabled={!canUndo()}

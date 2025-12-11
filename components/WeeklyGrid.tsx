@@ -10,14 +10,90 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  useDroppable,
 } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { usePlanningStore } from '@/store/usePlanningStore';
 import { CourseCard } from './CourseCard';
 import { Plus } from 'lucide-react';
 import type { Course } from '@/types';
 
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+interface TimeSlotProps {
+  id: string;
+  courses: Course[];
+  types_cours: any[];
+  terrains: any[];
+  coaches: any[];
+  isAdmin: boolean;
+  onAddCourse?: () => void;
+  onEditCourse?: (course: Course) => void;
+  onDeleteCourse: (id: string) => void;
+}
+
+function TimeSlot({
+  id,
+  courses,
+  types_cours,
+  terrains,
+  coaches,
+  isAdmin,
+  onAddCourse,
+  onEditCourse,
+  onDeleteCourse,
+}: TimeSlotProps) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`bg-secondary min-h-[60px] p-2 relative transition-colors ${
+        isOver ? 'bg-primary/20 ring-2 ring-primary' : 'hover:bg-muted/50'
+      }`}
+    >
+      {courses.map((course) => {
+        const typeCours = types_cours.find((t) => t.id === course.type_cours_id);
+        const terrain = terrains.find((t) => t.id === course.terrain_id);
+        const coach = coaches.find((c) => c.id === course.coach_id);
+
+        return (
+          <div key={course.id} className="mb-2 last:mb-0">
+            <CourseCard
+              course={course}
+              typeCours={typeCours}
+              terrain={terrain}
+              coach={coach}
+              isDraggable={isAdmin}
+              onEdit={onEditCourse ? () => onEditCourse(course) : undefined}
+              onDelete={
+                isAdmin
+                  ? () => {
+                      if (
+                        confirm('Êtes-vous sûr de vouloir supprimer ce cours?')
+                      ) {
+                        onDeleteCourse(course.id);
+                      }
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        );
+      })}
+
+      {isAdmin && courses.length === 0 && (
+        <button
+          onClick={onAddCourse}
+          className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity group"
+        >
+          <div className="bg-primary/20 border-2 border-dashed border-primary rounded-lg p-2">
+            <Plus className="w-6 h-6 text-primary" />
+          </div>
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface WeeklyGridProps {
   isAdmin?: boolean;
@@ -49,12 +125,17 @@ export function WeeklyGrid({ isAdmin = false, onAddCourse, onEditCourse }: Weekl
   // Generate time slots
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
-    const [startHour] = horaires.ouverture.split(':').map(Number);
-    const [endHour] = horaires.fermeture.split(':').map(Number);
+    const [startHour, startMinute] = horaires.ouverture.split(':').map(Number);
+    const [endHour, endMinute] = horaires.fermeture.split(':').map(Number);
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+    const interval = horaires.intervalle;
+
+    for (let minutes = startMinutes; minutes < endMinutes; minutes += interval) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      slots.push(`${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`);
     }
 
     return slots;
@@ -90,31 +171,16 @@ export function WeeklyGrid({ isAdmin = false, onAddCourse, onEditCourse }: Weekl
     setActiveCourse(null);
   };
 
-  const getCourseForSlot = (day: number, time: string) => {
-    return planning.filter((course) => {
-      if (course.jour_semaine !== day) return false;
-
-      const slotMinutes = parseTimeToMinutes(time);
-      const startMinutes = parseTimeToMinutes(course.heure_debut);
-      const endMinutes = parseTimeToMinutes(course.heure_fin);
-
-      return slotMinutes >= startMinutes && slotMinutes < endMinutes;
-    });
-  };
-
   const parseTimeToMinutes = (time: string): number => {
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
   };
 
-  const getCourseDuration = (course: Course): number => {
-    const start = parseTimeToMinutes(course.heure_debut);
-    const end = parseTimeToMinutes(course.heure_fin);
-    return Math.ceil((end - start) / 30); // Number of 30-minute slots
-  };
-
-  const isStartOfCourse = (course: Course, time: string): boolean => {
-    return course.heure_debut === time;
+  const getCourseForSlot = (day: number, time: string) => {
+    return planning.filter((course) => {
+      if (course.jour_semaine !== day) return false;
+      return course.heure_debut === time;
+    });
   };
 
   return (
@@ -153,76 +219,18 @@ export function WeeklyGrid({ isAdmin = false, onAddCourse, onEditCourse }: Weekl
                   const droppableId = `day-${dayIndex}-time-${time}`;
 
                   return (
-                    <SortableContext
+                    <TimeSlot
                       key={droppableId}
                       id={droppableId}
-                      items={coursesInSlot.map((c) => c.id)}
-                      strategy={rectSortingStrategy}
-                    >
-                      <div
-                        className="bg-secondary min-h-[60px] p-2 relative hover:bg-muted/50 transition-colors"
-                      >
-                        {coursesInSlot.map((course) => {
-                          const isStart = isStartOfCourse(course, time);
-                          if (!isStart) return null;
-
-                          const duration = getCourseDuration(course);
-                          const typeCours = types_cours.find(
-                            (t) => t.id === course.type_cours_id
-                          );
-                          const terrain = terrains.find(
-                            (t) => t.id === course.terrain_id
-                          );
-                          const coach = coaches.find((c) => c.id === course.coach_id);
-
-                          return (
-                            <div
-                              key={course.id}
-                              style={{
-                                gridRow: `span ${duration}`,
-                              }}
-                            >
-                              <CourseCard
-                                course={course}
-                                typeCours={typeCours}
-                                terrain={terrain}
-                                coach={coach}
-                                isDraggable={isAdmin}
-                                onEdit={
-                                  onEditCourse
-                                    ? () => onEditCourse(course)
-                                    : undefined
-                                }
-                                onDelete={
-                                  isAdmin
-                                    ? () => {
-                                        if (
-                                          confirm(
-                                            'Êtes-vous sûr de vouloir supprimer ce cours?'
-                                          )
-                                        ) {
-                                          deleteCourse(course.id);
-                                        }
-                                      }
-                                    : undefined
-                                }
-                              />
-                            </div>
-                          );
-                        })}
-
-                        {isAdmin && coursesInSlot.length === 0 && (
-                          <button
-                            onClick={() => onAddCourse?.(dayIndex, time)}
-                            className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity group"
-                          >
-                            <div className="bg-primary/20 border-2 border-dashed border-primary rounded-lg p-2">
-                              <Plus className="w-6 h-6 text-primary" />
-                            </div>
-                          </button>
-                        )}
-                      </div>
-                    </SortableContext>
+                      courses={coursesInSlot}
+                      types_cours={types_cours}
+                      terrains={terrains}
+                      coaches={coaches}
+                      isAdmin={isAdmin}
+                      onAddCourse={() => onAddCourse?.(dayIndex, time)}
+                      onEditCourse={onEditCourse}
+                      onDeleteCourse={deleteCourse}
+                    />
                   );
                 })}
               </div>
